@@ -1,0 +1,148 @@
+esphome:
+  name: m5-stack
+  friendly_name: M5 STack
+  includes:
+    - m5_fix.h
+  platformio_options:
+    board_build.f_cpu : 240000000L
+  libraries:
+    - m5stack/M5GFX@^0.2.11
+    - m5stack/M5Unified@^0.2.8
+  on_boot:
+      priority: 600
+      then:
+        - lambda: |-
+            M5.Display.setRotation(0);  // 0=default, 1=90°, 2=180°, 3=270°
+        - script.execute:
+            id: m5_display_set_brightness
+            value: 50
+
+script:
+  - id: draw_display
+    then:
+      - component.update: m5cores3_lcd
+  - id: m5_display_set_brightness
+    parameters:
+      value: int
+    then:
+      - lambda: |-
+           M5.Display.setBrightness(value);
+
+
+esp32:
+  board: esp32-s3-devkitc-1
+  variant: esp32s3
+  framework:
+    type: esp-idf
+    
+    
+
+psram:
+  mode: octal
+  speed: 80MHz
+
+external_components:
+  - source:
+      type: git
+      url: https://github.com/m5stack/M5CoreS3-Esphome
+    components: [ board_m5cores3, m5cores3_audio, m5cores3_display ]
+    refresh: 0s
+
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "/4tlXk7HOPEIG+1LngvUWeBZNHBBWaxQAI5VlnJj33Q="
+
+ota:
+  - platform: esphome
+    password: "cba70fb0bb0eb8a2845940f52cb0ff23"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "M5-Stack Fallback Hotspot"
+    password: "ze2kjDvg8fxI"
+
+captive_portal:
+
+time:
+  - platform: homeassistant
+    id: ha_time
+    on_time:
+      # Turn on at 08:00
+      - seconds: 0
+        minutes: 0
+        hours: 18
+        then:
+          - script.execute:
+              id: m5_display_set_brightness
+              value: 0
+
+display:
+  - platform: m5cores3_display
+    model: ILI9342
+    dc_pin: 35
+    id: m5cores3_lcd
+    update_interval: 60s
+    lambda: |-
+      auto red = Color(255, 0, 0);
+      auto green = Color(0, 255, 0);
+      auto blue = Color(0, 0, 255);
+      auto yellow = Color(255, 255, 0);
+      auto white = Color(255, 255, 255);
+      M5.Display.setRotation(3);  // 0=default, 1=90°, 2=180°, 3=270°
+      it.strftime(10, 10, id(font_large), TextAlign::TOP_LEFT, "%H:%M", id(ha_time).now());
+      it.printf(10, 70, id(font_small), "Kerry's Battery: %.1f%%", id(kb_battery).state);
+      it.printf(10, 105, id(font_small), yellow, "Giles'  Battery: %.1f%%", id(gr_battery).state);
+      it.printf(10, 145, id(font_small), blue, "Kerry Time: %.1fs", id(kb_duration).state);
+      it.printf(10, 180, id(font_small), red, "Giles Time: %.1fs", id(gr_duration).state);
+      it.printf(100, 10, id(font_small), white, "Battery: %d%%", M5.Power.getBatteryLevel());
+
+font:
+  - file: "gfonts://Roboto"
+    id: font_small
+    size: 30
+  - file: "gfonts://Roboto"
+    id: font_medium
+    size: 45
+  - file: "gfonts://Roboto"
+    id: font_large
+    size: 50
+
+sensor:
+  - platform: homeassistant
+    name: "Kerry's Battery"
+    id: kb_battery
+    entity_id: sensor.io_series_4_b3bd_battery
+
+  - platform: homeassistant
+    name: "Giles' Battery"
+    id: gr_battery
+    entity_id: sensor.io_series_4_1dcf_battery
+
+  - platform: homeassistant
+    name: "Kerry Runtime"
+    id: kb_duration
+    entity_id: sensor.io_series_4_b3bd_duration
+
+  - platform: homeassistant
+    name: "Giles Runtime"
+    id: gr_duration
+    entity_id: sensor.io_series_4_1dcf_duration
+
+  - platform: template
+    id: m5_battery_percent
+    name: "M5 Battery %"
+    unit_of_measurement: "%"
+    accuracy_decimals: 0
+    update_interval: 60s
+    lambda: |-
+      return M5.Power.getBatteryLevel();
+
