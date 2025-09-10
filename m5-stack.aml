@@ -15,7 +15,7 @@ esphome:
             M5.Display.setRotation(0);  // 0=default, 1=90°, 2=180°, 3=270°
         - script.execute:
             id: m5_display_set_brightness
-            value: 50
+            value: 40
 
 script:
   - id: draw_display
@@ -72,6 +72,16 @@ wifi:
 
 captive_portal:
 
+globals:
+  - id: update_delay
+    type: int
+    restore_value: no
+    initial_value: '5'
+  - id: last_running_value
+    type: std::string
+    restore_value: no
+    initial_value: '"Kerry"'
+
 time:
   - platform: homeassistant
     id: ha_time
@@ -85,36 +95,42 @@ time:
               id: m5_display_set_brightness
               value: 0
 
-display:
-  - platform: m5cores3_display
-    model: ILI9342
-    dc_pin: 35
-    id: m5cores3_lcd
-    update_interval: 60s
-    lambda: |-
-      auto red = Color(255, 0, 0);
-      auto green = Color(0, 255, 0);
-      auto blue = Color(0, 0, 255);
-      auto yellow = Color(255, 255, 0);
-      auto white = Color(255, 255, 255);
-      M5.Display.setRotation(3);  // 0=default, 1=90°, 2=180°, 3=270°
-      it.strftime(10, 10, id(font_large), TextAlign::TOP_LEFT, "%H:%M", id(ha_time).now());
-      it.printf(10, 70, id(font_small), "Kerry's Battery: %.1f%%", id(kb_battery).state);
-      it.printf(10, 105, id(font_small), yellow, "Giles'  Battery: %.1f%%", id(gr_battery).state);
-      it.printf(10, 145, id(font_small), blue, "Kerry Time: %.1fs", id(kb_duration).state);
-      it.printf(10, 180, id(font_small), red, "Giles Time: %.1fs", id(gr_duration).state);
-      it.printf(100, 10, id(font_small), white, "Battery: %d%%", M5.Power.getBatteryLevel());
-
 font:
   - file: "gfonts://Roboto"
     id: font_small
-    size: 30
+    size: 20
   - file: "gfonts://Roboto"
     id: font_medium
     size: 45
   - file: "gfonts://Roboto"
     id: font_large
     size: 50
+  - file: 'fonts/Roboto-Medium.ttf'
+    id: robot_medum20
+    size: 25
+  - file: 'fonts/materialdesignicons-webfont.ttf'
+    id: icon_font_70
+    size: 90
+    glyphs: [
+      "󰱳", # smileykiss
+      "󰇸", # sadface
+      "󰇵", # smileyface
+      "󰦖", # Timer
+      "󰦥", # Star Smiley Face
+      "󰫉", # Filled Star
+      "󰫊", # Hollow Star
+      ]
+  - file: 'fonts/materialdesignicons-webfont.ttf'
+    id: icon_font_40
+    size: 55
+    glyphs: [
+      "󰂄", # battery
+      "󰇵", # smileyface
+      "󰦖", # Timer
+      "󰦥", # Star Smiley Face
+      "󰫉", # Filled Star
+      "󰫊", # Hollow Star
+      ]
 
 sensor:
   - platform: homeassistant
@@ -145,4 +161,102 @@ sensor:
     update_interval: 60s
     lambda: |-
       return M5.Power.getBatteryLevel();
+  
+text_sensor:
+  - platform: homeassistant
+    entity_id: sensor.io_series_4_b3bd
+    id: kb_status
+    name: "KB Status"
+    
+  - platform: homeassistant
+    entity_id: sensor.io_series_4_1dcf
+    id: gr_status
+    name: "GR Status"
 
+  - platform: template
+    name: "Last Running Sensor Value"
+    lambda: |-
+      return id(last_running_value);
+
+# On state change logic
+interval:
+  - interval: 5s
+    then:
+      - lambda: |-
+          if (id(kb_status).state == "running") {
+            id(last_running_value) = "Kerry";
+          } else if (id(gr_status).state == "running") {
+            id(last_running_value) = "Giles";
+          }
+
+display:
+  - platform: m5cores3_display
+    model: ILI9342
+    dc_pin: 35
+    id: m5cores3_lcd
+    update_interval: 10s
+    lambda: |-
+      auto red = Color(255, 0, 0);
+      auto green = Color(0, 255, 0);
+      auto blue = Color(0, 0, 255);
+      auto yellow = Color(255, 255, 0);
+      auto white = Color(255, 255, 255);
+      M5.Display.setRotation(3);  // 0=default, 1=90°, 2=180°, 3=270°
+      it.printf(220, 10, id(font_small), white, "%d%%", M5.Power.getBatteryLevel());
+      float duration;
+      if (id(last_running_value) == "Kerry") {
+        duration = id(kb_duration).state;
+      } else if (id(last_running_value) == "Giles") {
+        duration = id(gr_duration).state;
+      } else {
+        duration = 0;  // fallback
+      }
+      if (duration < 30) {
+        it.strftime(3, 0, id(font_medium), TextAlign::TOP_LEFT, "%H:%M", id(ha_time).now());
+        it.printf(3, 50, id(robot_medum20), "Kerry Bat: %.1f%%", id(kb_battery).state);
+        it.printf(3, 80, id(robot_medum20), "Giles  Bat: %.1f%%", id(gr_battery).state);
+        it.printf(3, 120, id(robot_medum20), "Kerry Time: %.1fs", id(kb_duration).state);
+        it.printf(3, 150, id(robot_medum20), "Giles Time: %.1fs", id(gr_duration).state);
+        it.printf(220, 150, id(icon_font_70), red, "󰇸");
+        it.printf(3, 190, id(icon_font_40), yellow, "󰫊󰫊󰫊󰫊");
+      } else if (duration < 60) {
+        it.strftime(3, 0, id(font_medium), TextAlign::TOP_LEFT, "%H:%M", id(ha_time).now());
+        it.printf(3, 50, id(robot_medum20), "Kerry Bat: %.1f%%", id(kb_battery).state);
+        it.printf(3, 80, id(robot_medum20), "Giles  Bat: %.1f%%", id(gr_battery).state);
+        it.printf(3, 120, id(robot_medum20), "Kerry Time: %.1fs", id(kb_duration).state);
+        it.printf(3, 150, id(robot_medum20), "Giles Time: %.1fs", id(gr_duration).state);
+        it.printf(220, 150, id(icon_font_70), red, "󰇸");
+        it.printf(3, 190, id(icon_font_40), yellow, "󰦥󰫊󰫊󰫊");
+      } else if (duration < 90) {
+        it.strftime(3, 0, id(font_medium), TextAlign::TOP_LEFT, "%H:%M", id(ha_time).now());
+        it.printf(3, 50, id(robot_medum20), "Kerry Bat: %.1f%%", id(kb_battery).state);
+        it.printf(3, 80, id(robot_medum20), "Giles  Bat: %.1f%%", id(gr_battery).state);
+        it.printf(3, 120, id(robot_medum20), "Kerry Time: %.1fs", id(kb_duration).state);
+        it.printf(3, 150, id(robot_medum20), "Giles Time: %.1fs", id(gr_duration).state);
+        it.printf(220, 150, id(icon_font_70), red, "󰇸");
+        it.printf(3, 180, id(icon_font_40), yellow, "󰦥󰦥󰫊󰫊");
+      } else if (duration < 120) {
+        it.strftime(3, 0, id(font_medium), TextAlign::TOP_LEFT, "%H:%M", id(ha_time).now());
+        it.printf(3, 50, id(robot_medum20), "Kerry Bat: %.1f%%", id(kb_battery).state);
+        it.printf(3, 80, id(robot_medum20), "Giles  Bat: %.1f%%", id(gr_battery).state);
+        it.printf(3, 120, id(robot_medum20), "Kerry Time: %.1fs", id(kb_duration).state);
+        it.printf(3, 150, id(robot_medum20), "Giles Time: %.1fs", id(gr_duration).state);
+        it.printf(220, 150, id(icon_font_70), red, "󰇸");
+        it.printf(3, 180, id(icon_font_40), yellow, "󰦥󰦥󰦥󰫊");
+      } else if (duration < 180) {
+        it.strftime(3, 0, id(font_medium), TextAlign::TOP_LEFT, "%H:%M", id(ha_time).now());
+        it.printf(3, 50, id(robot_medum20), "Kerry Bat: %.1f%%", id(kb_battery).state);
+        it.printf(3, 80, id(robot_medum20), "Giles  Bat: %.1f%%", id(gr_battery).state);
+        it.printf(3, 120, id(robot_medum20), "Kerry Time: %.1fs", id(kb_duration).state);
+        it.printf(3, 150, id(robot_medum20), "Giles Time: %.1fs", id(gr_duration).state);
+        it.printf(220, 150, id(icon_font_70), green, "󰇵");
+        it.printf(3, 180, id(icon_font_40), "󰦥󰦥󰦥󰦥");
+      } else if (duration > 180) {
+        it.strftime(3, 0, id(font_medium), TextAlign::TOP_LEFT, "%H:%M", id(ha_time).now());
+        it.printf(3, 50, id(robot_medum20), "Kerry Bat: %.1f%%", id(kb_battery).state);
+        it.printf(3, 80, id(robot_medum20), "Giles  Bat: %.1f%%", id(gr_battery).state);
+        it.printf(3, 120, id(robot_medum20), "Kerry Time: %.1fs", id(kb_duration).state);
+        it.printf(3, 150, id(robot_medum20), "Giles Time: %.1fs", id(gr_duration).state);
+        it.printf(220, 150, id(icon_font_70), green, "󰱳");
+        it.printf(3, 180, id(icon_font_40), yellow, "󰦥󰦥󰦥󰦥󰦥");
+      }
