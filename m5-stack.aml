@@ -219,20 +219,20 @@ display:
       }
       if (duration < 30) {
         it.printf(230, 150, id(icon_font_70), red, "󰇸");
-        it.printf(3, 195, id(icon_font_40), yellow, "󰫊󰫊󰫊󰫊");
+        it.printf(3, 190, id(icon_font_40), yellow, "󰫊󰫊󰫊󰫊");
       } else if (duration < 60) {
         it.printf(230, 150, id(icon_font_70), red, "󰇸");
-        it.printf(3, 195, id(icon_font_40), yellow, "󰦥󰫊󰫊󰫊");
+        it.printf(3, 190, id(icon_font_40), yellow, "󰦥󰫊󰫊󰫊");
       } else if (duration < 90) {
         it.printf(230, 150, id(icon_font_70), red, "󰇸");
-        it.printf(3, 195, id(icon_font_40), yellow, "󰦥󰦥󰫊󰫊");
+        it.printf(3, 190, id(icon_font_40), yellow, "󰦥󰦥󰫊󰫊");
       } else if (duration < 120) {
         it.printf(230, 150, id(icon_font_70), red, "󰇸");
-        it.printf(3, 195, id(icon_font_40), yellow, "󰦥󰦥󰦥󰫊");
+        it.printf(3, 190, id(icon_font_40), yellow, "󰦥󰦥󰦥󰫊");
       } else if (duration < 180) {
         it.printf(230, 150, id(icon_font_70), green, "󰇵");
-        it.printf(3, 195, id(icon_font_40), yellow, "󰦥󰦥󰦥󰦥");
+        it.printf(3, 190, id(icon_font_40), yellow, "󰦥󰦥󰦥󰦥");
       } else if (duration > 180) {
         it.printf(230, 150, id(icon_font_70), green, "󰱳");
-        it.printf(3, 195, id(icon_font_40), yellow, "󰦥󰦥󰦥󰦥󰦥");
+        it.printf(3, 190, id(icon_font_40), yellow, "󰦥󰦥󰦥󰦥󰦥");
       }
