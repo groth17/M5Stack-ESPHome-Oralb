@@ -15,7 +15,7 @@ esphome:
             M5.Display.setRotation(0);  // 0=default, 1=90°, 2=180°, 3=270°
         - script.execute:
             id: m5_display_set_brightness
-            value: 40
+            value: 35
 
 script:
   - id: draw_display
@@ -107,7 +107,7 @@ font:
     size: 50
   - file: 'fonts/Roboto-Medium.ttf'
     id: robot_medum20
-    size: 25
+    size: 30
   - file: 'fonts/materialdesignicons-webfont.ttf'
     id: icon_font_70
     size: 90
@@ -202,7 +202,13 @@ display:
       auto yellow = Color(255, 255, 0);
       auto white = Color(255, 255, 255);
       M5.Display.setRotation(3);  // 0=default, 1=90°, 2=180°, 3=270°
-      it.printf(220, 10, id(font_small), white, "%d%%", M5.Power.getBatteryLevel());
+      it.printf(250, 10, id(font_small), white, "%d%%", M5.Power.getBatteryLevel());
+      it.printf(280, 10, id(icon_font_40), "󰂄");
+      it.strftime(3, 0, id(font_medium), TextAlign::TOP_LEFT, "%H:%M", id(ha_time).now());
+      it.printf(3, 50, id(robot_medum20), "Kerry Bat: %.1f%%", id(kb_battery).state);
+      it.printf(3, 80, id(robot_medum20), "Giles  Bat: %.1f%%", id(gr_battery).state);
+      it.printf(3, 120, id(robot_medum20), "Kerry Time: %.1fs", id(kb_duration).state);
+      it.printf(3, 150, id(robot_medum20), "Giles Time: %.1fs", id(gr_duration).state);
       float duration;
       if (id(last_running_value) == "Kerry") {
         duration = id(kb_duration).state;
@@ -212,51 +218,21 @@ display:
         duration = 0;  // fallback
       }
       if (duration < 30) {
-        it.strftime(3, 0, id(font_medium), TextAlign::TOP_LEFT, "%H:%M", id(ha_time).now());
-        it.printf(3, 50, id(robot_medum20), "Kerry Bat: %.1f%%", id(kb_battery).state);
-        it.printf(3, 80, id(robot_medum20), "Giles  Bat: %.1f%%", id(gr_battery).state);
-        it.printf(3, 120, id(robot_medum20), "Kerry Time: %.1fs", id(kb_duration).state);
-        it.printf(3, 150, id(robot_medum20), "Giles Time: %.1fs", id(gr_duration).state);
-        it.printf(220, 150, id(icon_font_70), red, "󰇸");
-        it.printf(3, 190, id(icon_font_40), yellow, "󰫊󰫊󰫊󰫊");
+        it.printf(230, 150, id(icon_font_70), red, "󰇸");
+        it.printf(3, 195, id(icon_font_40), yellow, "󰫊󰫊󰫊󰫊");
       } else if (duration < 60) {
-        it.strftime(3, 0, id(font_medium), TextAlign::TOP_LEFT, "%H:%M", id(ha_time).now());
-        it.printf(3, 50, id(robot_medum20), "Kerry Bat: %.1f%%", id(kb_battery).state);
-        it.printf(3, 80, id(robot_medum20), "Giles  Bat: %.1f%%", id(gr_battery).state);
-        it.printf(3, 120, id(robot_medum20), "Kerry Time: %.1fs", id(kb_duration).state);
-        it.printf(3, 150, id(robot_medum20), "Giles Time: %.1fs", id(gr_duration).state);
-        it.printf(220, 150, id(icon_font_70), red, "󰇸");
-        it.printf(3, 190, id(icon_font_40), yellow, "󰦥󰫊󰫊󰫊");
+        it.printf(230, 150, id(icon_font_70), red, "󰇸");
+        it.printf(3, 195, id(icon_font_40), yellow, "󰦥󰫊󰫊󰫊");
       } else if (duration < 90) {
-        it.strftime(3, 0, id(font_medium), TextAlign::TOP_LEFT, "%H:%M", id(ha_time).now());
-        it.printf(3, 50, id(robot_medum20), "Kerry Bat: %.1f%%", id(kb_battery).state);
-        it.printf(3, 80, id(robot_medum20), "Giles  Bat: %.1f%%", id(gr_battery).state);
-        it.printf(3, 120, id(robot_medum20), "Kerry Time: %.1fs", id(kb_duration).state);
-        it.printf(3, 150, id(robot_medum20), "Giles Time: %.1fs", id(gr_duration).state);
-        it.printf(220, 150, id(icon_font_70), red, "󰇸");
-        it.printf(3, 180, id(icon_font_40), yellow, "󰦥󰦥󰫊󰫊");
+        it.printf(230, 150, id(icon_font_70), red, "󰇸");
+        it.printf(3, 195, id(icon_font_40), yellow, "󰦥󰦥󰫊󰫊");
       } else if (duration < 120) {
-        it.strftime(3, 0, id(font_medium), TextAlign::TOP_LEFT, "%H:%M", id(ha_time).now());
-        it.printf(3, 50, id(robot_medum20), "Kerry Bat: %.1f%%", id(kb_battery).state);
-        it.printf(3, 80, id(robot_medum20), "Giles  Bat: %.1f%%", id(gr_battery).state);
-        it.printf(3, 120, id(robot_medum20), "Kerry Time: %.1fs", id(kb_duration).state);
-        it.printf(3, 150, id(robot_medum20), "Giles Time: %.1fs", id(gr_duration).state);
-        it.printf(220, 150, id(icon_font_70), red, "󰇸");
-        it.printf(3, 180, id(icon_font_40), yellow, "󰦥󰦥󰦥󰫊");
+        it.printf(230, 150, id(icon_font_70), red, "󰇸");
+        it.printf(3, 195, id(icon_font_40), yellow, "󰦥󰦥󰦥󰫊");
       } else if (duration < 180) {
-        it.strftime(3, 0, id(font_medium), TextAlign::TOP_LEFT, "%H:%M", id(ha_time).now());
-        it.printf(3, 50, id(robot_medum20), "Kerry Bat: %.1f%%", id(kb_battery).state);
-        it.printf(3, 80, id(robot_medum20), "Giles  Bat: %.1f%%", id(gr_battery).state);
-        it.printf(3, 120, id(robot_medum20), "Kerry Time: %.1fs", id(kb_duration).state);
-        it.printf(3, 150, id(robot_medum20), "Giles Time: %.1fs", id(gr_duration).state);
-        it.printf(220, 150, id(icon_font_70), green, "󰇵");
-        it.printf(3, 180, id(icon_font_40), "󰦥󰦥󰦥󰦥");
+        it.printf(230, 150, id(icon_font_70), green, "󰇵");
+        it.printf(3, 195, id(icon_font_40), yellow, "󰦥󰦥󰦥󰦥");
       } else if (duration > 180) {
-        it.strftime(3, 0, id(font_medium), TextAlign::TOP_LEFT, "%H:%M", id(ha_time).now());
-        it.printf(3, 50, id(robot_medum20), "Kerry Bat: %.1f%%", id(kb_battery).state);
-        it.printf(3, 80, id(robot_medum20), "Giles  Bat: %.1f%%", id(gr_battery).state);
-        it.printf(3, 120, id(robot_medum20), "Kerry Time: %.1fs", id(kb_duration).state);
-        it.printf(3, 150, id(robot_medum20), "Giles Time: %.1fs", id(gr_duration).state);
-        it.printf(220, 150, id(icon_font_70), green, "󰱳");
-        it.printf(3, 180, id(icon_font_40), yellow, "󰦥󰦥󰦥󰦥󰦥");
+        it.printf(230, 150, id(icon_font_70), green, "󰱳");
+        it.printf(3, 195, id(icon_font_40), yellow, "󰦥󰦥󰦥󰦥󰦥");
       }
