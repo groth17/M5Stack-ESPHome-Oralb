@@ -16,31 +16,13 @@ esphome:
         - script.execute:
             id: m5_display_set_brightness
             value: 35
-
-script:
-  - id: draw_display
-    then:
-      - component.update: m5cores3_lcd
-  - id: m5_display_set_brightness
-    parameters:
-      value: int
-    then:
-      - lambda: |-
-           M5.Display.setBrightness(value); 
-  - id: clear_screen
-    then:
-      - lambda: |-
-          auto black = Color(0, 0, 0);
-          id(m5cores3_lcd).fill(black);
+        - wifi.enable
 
 esp32:
   board: esp32-s3-devkitc-1
   variant: esp32s3
   framework:
     type: esp-idf
-    
-    
-    
 
 psram:
   mode: octal
@@ -67,6 +49,7 @@ ota:
     password: "cba70fb0bb0eb8a2845940f52cb0ff23"
 
 wifi:
+  id: wifi_id
   ssid: !secret wifi_ssid
   password: !secret wifi_password
 
@@ -100,10 +83,26 @@ time:
               id: m5_display_set_brightness
               value: 0
 
+script:
+  - id: set_display_bightness
+    then:
+      - component.update: m5cores3_lcd
+  - id: m5_display_set_brightness
+    parameters:
+      value: int
+    then:
+      - lambda: |-
+           M5.Display.setBrightness(value); 
+  - id: clear_screen
+    then:
+      - lambda: |-
+          auto black = Color(0, 0, 0);
+          id(m5cores3_lcd).fill(black);
+
 font:
   - file: "gfonts://Roboto"
     id: font_small
-    size: 20
+    size: 25
   - file: "gfonts://Roboto"
     id: font_medium
     size: 45
@@ -112,7 +111,7 @@ font:
     size: 50
   - file: 'fonts/Roboto-Medium.ttf'
     id: robot_medum20
-    size: 30
+    size: 28
   - file: 'fonts/materialdesignicons-webfont.ttf'
     id: icon_font_70
     size: 90
@@ -132,6 +131,17 @@ font:
       "󰂄", # battery
       "󰇵", # smileyface
       "󰦖", # Timer
+      "󰦥", # Star Smiley Face
+      "󰫉", # Filled Star
+      "󰫊", # Hollow Star
+      ]
+  - file: 'fonts/materialdesignicons-webfont.ttf'
+    id: icon_font_30
+    size: 30
+    glyphs: [
+      "󰂄", # battery
+      "󰖩", # Wifi_On
+      "󰖪", # Wifi_Off
       "󰦥", # Star Smiley Face
       "󰫉", # Filled Star
       "󰫊", # Hollow Star
@@ -187,7 +197,8 @@ button:
   - platform: template
     name: "Clear Screen"
     on_press:
-      - script.execute: clear_screen
+      then:
+        - wifi.disable:
 
 # On state change logic
 interval:
@@ -214,9 +225,13 @@ display:
       auto white = Color(255, 255, 255);
       auto black = Color(0,0,0);
       M5.Display.setRotation(3);  // 0=default, 1=90°, 2=180°, 3=270°
-      it.fill(black);
-      it.printf(250, 10, id(font_small), white, "%d%%", M5.Power.getBatteryLevel());
-      it.printf(280, 10, id(icon_font_40), "󰂄");
+      it.printf(210, 10, id(font_small), white, "%d%%", M5.Power.getBatteryLevel());
+      it.printf(250, 10, id(icon_font_30), "󰂄");
+      if( id(wifi_id).is_disabled() ) {
+        it.printf(280, 10, id(icon_font_30), "󰖪");
+      } else {
+        it.printf(280, 10, id(icon_font_30), "󰖩");
+      }
       it.strftime(3, 0, id(font_medium), TextAlign::TOP_LEFT, "%H:%M", id(ha_time).now());
       it.printf(3, 50, id(robot_medum20), "Kerry Bat: %.1f%%", id(kb_battery).state);
       it.printf(3, 80, id(robot_medum20), "Giles  Bat: %.1f%%", id(gr_battery).state);
