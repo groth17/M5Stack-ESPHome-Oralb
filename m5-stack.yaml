@@ -52,6 +52,7 @@ wifi:
   id: wifi_id
   ssid: !secret wifi_ssid
   password: !secret wifi_password
+  reboot_timeout: 0s
 
   # Enable fallback hotspot (captive portal) in case wifi connection fails
   ap:
@@ -253,7 +254,7 @@ display:
       auto white = Color(255, 255, 255);
       auto black = Color(0,0,0);
       M5.Display.setRotation(3);  // 0=default, 1=90°, 2=180°, 3=270°
-      it.printf(210, 10, id(font_small), white, "%d%%", M5.Power.getBatteryLevel());
+      it.printf(195, 10, id(font_small), white, "%d%%", M5.Power.getBatteryLevel());
       it.printf(250, 10, id(icon_font_30), "󰂄");
       if( id(wifi_id).is_disabled() ) {
         it.printf(280, 10, id(icon_font_30), "󰖪");
