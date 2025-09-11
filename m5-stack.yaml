@@ -74,17 +74,34 @@ time:
   - platform: homeassistant
     id: ha_time
     on_time:
-      # Turn on at 08:00
       - seconds: 0
         minutes: 0
-        hours: 18
+        hours: 22
         then:
-          - script.execute:
-              id: m5_display_set_brightness
-              value: 0
+          - wifi.enable:
+      - seconds: 0
+        minutes: 0
+        hours: 00
+        then:
+          - wifi.disable:
+      - seconds: 0
+        minutes: 0
+        hours: 07
+        then:
+          - wifi.enable:
+      - seconds: 0
+        minutes: 0
+        hours: 10
+        then:
+          - wifi.disable:
+    
+      
+#         - script.execute:
+#              id: m5_display_set_brightness
+#              value: 0
 
 script:
-  - id: set_display_bightness
+  - id: draw_display
     then:
       - component.update: m5cores3_lcd
   - id: m5_display_set_brightness
@@ -195,28 +212,39 @@ text_sensor:
 
 button:
   - platform: template
-    name: "Clear Screen"
+    name: "Disable Wifi"
     on_press:
       then:
         - wifi.disable:
 
 # On state change logic
 interval:
-  - interval: 5s
+  - interval: 10s
     then:
       - lambda: |-
           if (id(kb_status).state == "running") {
             id(last_running_value) = "Kerry";
+            id(draw_display).execute();
+            id(m5_display_set_brightness).execute(120);
           } else if (id(gr_status).state == "running") {
             id(last_running_value) = "Giles";
+            id(draw_display).execute();
+            id(m5_display_set_brightness).execute(120);
+            ESP_LOGD("Giles Running", "Just Executed");
           }
+  - interval: 60s
+    then:
+      - lambda: |-
+            id(m5_display_set_brightness).execute(60);
+            id(draw_display).execute();
+            ESP_LOGD("60 second interval", "Just Executed");
 
 display:
   - platform: m5cores3_display
     model: ILI9342
     dc_pin: 35
     id: m5cores3_lcd
-    update_interval: 10s
+    update_interval: never
     lambda: |-
       auto red = Color(255, 0, 0);
       auto green = Color(0, 255, 0);
