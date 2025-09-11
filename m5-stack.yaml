@@ -1,0 +1,251 @@
+esphome:
+  name: m5-stack
+  friendly_name: M5 STack
+  includes:
+    - m5_fix.h
+  platformio_options:
+    board_build.f_cpu : 240000000L
+  libraries:
+    - m5stack/M5GFX@^0.2.11
+    - m5stack/M5Unified@^0.2.8
+  on_boot:
+      priority: 600
+      then:
+        - lambda: |-
+            M5.Display.setRotation(0);  // 0=default, 1=90°, 2=180°, 3=270°
+        - script.execute:
+            id: m5_display_set_brightness
+            value: 35
+
+script:
+  - id: draw_display
+    then:
+      - component.update: m5cores3_lcd
+  - id: m5_display_set_brightness
+    parameters:
+      value: int
+    then:
+      - lambda: |-
+           M5.Display.setBrightness(value); 
+  - id: clear_screen
+    then:
+      - lambda: |-
+          auto black = Color(0, 0, 0);
+          id(m5cores3_lcd).fill(black);
+
+esp32:
+  board: esp32-s3-devkitc-1
+  variant: esp32s3
+  framework:
+    type: esp-idf
+    
+    
+    
+
+psram:
+  mode: octal
+  speed: 80MHz
+
+external_components:
+  - source:
+      type: git
+      url: https://github.com/m5stack/M5CoreS3-Esphome
+    components: [ board_m5cores3, m5cores3_audio, m5cores3_display ]
+    refresh: 0s
+
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "/4tlXk7HOPEIG+1LngvUWeBZNHBBWaxQAI5VlnJj33Q="
+
+ota:
+  - platform: esphome
+    password: "cba70fb0bb0eb8a2845940f52cb0ff23"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "M5-Stack Fallback Hotspot"
+    password: "ze2kjDvg8fxI"
+
+captive_portal:
+
+globals:
+  - id: update_delay
+    type: int
+    restore_value: no
+    initial_value: '5'
+  - id: last_running_value
+    type: std::string
+    restore_value: no
+    initial_value: '"Kerry"'
+
+time:
+  - platform: homeassistant
+    id: ha_time
+    on_time:
+      # Turn on at 08:00
+      - seconds: 0
+        minutes: 0
+        hours: 18
+        then:
+          - script.execute:
+              id: m5_display_set_brightness
+              value: 0
+
+font:
+  - file: "gfonts://Roboto"
+    id: font_small
+    size: 20
+  - file: "gfonts://Roboto"
+    id: font_medium
+    size: 45
+  - file: "gfonts://Roboto"
+    id: font_large
+    size: 50
+  - file: 'fonts/Roboto-Medium.ttf'
+    id: robot_medum20
+    size: 30
+  - file: 'fonts/materialdesignicons-webfont.ttf'
+    id: icon_font_70
+    size: 90
+    glyphs: [
+      "󰱳", # smileykiss
+      "󰇸", # sadface
+      "󰇵", # smileyface
+      "󰦖", # Timer
+      "󰦥", # Star Smiley Face
+      "󰫉", # Filled Star
+      "󰫊", # Hollow Star
+      ]
+  - file: 'fonts/materialdesignicons-webfont.ttf'
+    id: icon_font_40
+    size: 55
+    glyphs: [
+      "󰂄", # battery
+      "󰇵", # smileyface
+      "󰦖", # Timer
+      "󰦥", # Star Smiley Face
+      "󰫉", # Filled Star
+      "󰫊", # Hollow Star
+      ]
+
+sensor:
+  - platform: homeassistant
+    name: "Kerry's Battery"
+    id: kb_battery
+    entity_id: sensor.io_series_4_b3bd_battery
+
+  - platform: homeassistant
+    name: "Giles' Battery"
+    id: gr_battery
+    entity_id: sensor.io_series_4_1dcf_battery
+
+  - platform: homeassistant
+    name: "Kerry Runtime"
+    id: kb_duration
+    entity_id: sensor.io_series_4_b3bd_duration
+
+  - platform: homeassistant
+    name: "Giles Runtime"
+    id: gr_duration
+    entity_id: sensor.io_series_4_1dcf_duration
+
+  - platform: template
+    id: m5_battery_percent
+    name: "M5 Battery %"
+    unit_of_measurement: "%"
+    accuracy_decimals: 0
+    update_interval: 60s
+    lambda: |-
+      return M5.Power.getBatteryLevel();
+  
+text_sensor:
+  - platform: homeassistant
+    entity_id: sensor.io_series_4_b3bd
+    id: kb_status
+    name: "KB Status"
+    
+  - platform: homeassistant
+    entity_id: sensor.io_series_4_1dcf
+    id: gr_status
+    name: "GR Status"
+
+  - platform: template
+    name: "Last Running Sensor Value"
+    lambda: |-
+      return id(last_running_value);
+
+button:
+  - platform: template
+    name: "Clear Screen"
+    on_press:
+      - script.execute: clear_screen
+
+# On state change logic
+interval:
+  - interval: 5s
+    then:
+      - lambda: |-
+          if (id(kb_status).state == "running") {
+            id(last_running_value) = "Kerry";
+          } else if (id(gr_status).state == "running") {
+            id(last_running_value) = "Giles";
+          }
+
+display:
+  - platform: m5cores3_display
+    model: ILI9342
+    dc_pin: 35
+    id: m5cores3_lcd
+    update_interval: 10s
+    lambda: |-
+      auto red = Color(255, 0, 0);
+      auto green = Color(0, 255, 0);
+      auto blue = Color(0, 0, 255);
+      auto yellow = Color(255, 255, 0);
+      auto white = Color(255, 255, 255);
+      auto black = Color(0,0,0);
+      M5.Display.setRotation(3);  // 0=default, 1=90°, 2=180°, 3=270°
+      it.fill(black);
+      it.printf(250, 10, id(font_small), white, "%d%%", M5.Power.getBatteryLevel());
+      it.printf(280, 10, id(icon_font_40), "󰂄");
+      it.strftime(3, 0, id(font_medium), TextAlign::TOP_LEFT, "%H:%M", id(ha_time).now());
+      it.printf(3, 50, id(robot_medum20), "Kerry Bat: %.1f%%", id(kb_battery).state);
+      it.printf(3, 80, id(robot_medum20), "Giles  Bat: %.1f%%", id(gr_battery).state);
+      it.printf(3, 120, id(robot_medum20), "Kerry Time: %.1fs", id(kb_duration).state);
+      it.printf(3, 150, id(robot_medum20), "Giles Time: %.1fs", id(gr_duration).state);
+      float duration;
+      if (id(last_running_value) == "Kerry") {
+        duration = id(kb_duration).state;
+      } else if (id(last_running_value) == "Giles") {
+        duration = id(gr_duration).state;
+      } else {
+        duration = 0;  // fallback
+      }
+      if (duration < 30) {
+        it.printf(230, 150, id(icon_font_70), red, "󰇸");
+        it.printf(3, 190, id(icon_font_40), yellow, "󰫊󰫊󰫊󰫊");
+      } else if (duration < 60) {
+        it.printf(230, 150, id(icon_font_70), red, "󰇸");
+        it.printf(3, 190, id(icon_font_40), yellow, "󰦥󰫊󰫊󰫊");
+      } else if (duration < 90) {
+        it.printf(230, 150, id(icon_font_70), red, "󰇸");
+        it.printf(3, 190, id(icon_font_40), yellow, "󰦥󰦥󰫊󰫊");
+      } else if (duration < 120) {
+        it.printf(230, 150, id(icon_font_70), red, "󰇸");
+        it.printf(3, 190, id(icon_font_40), yellow, "󰦥󰦥󰦥󰫊");
+      } else if (duration < 180) {
+        it.printf(230, 150, id(icon_font_70), green, "󰇵");
+        it.printf(3, 190, id(icon_font_40), yellow, "󰦥󰦥󰦥󰦥");
+      } else if (duration > 180) {
+        it.printf(230, 150, id(icon_font_70), green, "󰱳");
+        it.printf(3, 190, id(icon_font_40), yellow, "󰦥󰦥󰦥󰦥󰦥");
+      }
